@@ -4,12 +4,14 @@ USE chat
 
 CREATE TABLE rooms (
   id INT(11) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  roomname VARCHAR(255) NOT NULL
+  roomname VARCHAR(255) NOT NULL,
+  CONSTRAINT unique_rooms UNIQUE (roomname)
 );
 
 CREATE TABLE users (
   id INT(11) PRIMARY KEY NOT NULL AUTO_INCREMENT,
-  username VARCHAR(255) NOT NULL
+  username VARCHAR(255) NOT NULL,
+  CONSTRAINT unique_users UNIQUE (username)
 );
 
 CREATE TABLE rooms_users (

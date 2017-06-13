@@ -17,6 +17,7 @@ var app = {
     app.username = window.location.search.substr(10);
     // send username;
     app.sendUsername(app.username);
+    app.sendRoom(app.roomname);
     // Cache jQuery selectors
     app.$message = $('#message');
     app.$chats = $('#chats');
