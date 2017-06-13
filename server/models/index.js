@@ -1,15 +1,22 @@
 var db = require('../db');
+var dBHelper = require('../helpers/dBHelper.js');
 
 module.exports = {
   messages: {
     get: function () {}, // a function which produces all the messages
-    post: function () {} // a function which can be used to insert a message into the database
+    post: function (obj, cb) {
+      dBHelper.buildMessage(obj, cb);
+    } // a function which can be used to insert a message into the database
   },
 
   users: {
     // Ditto as above.
-    get: function () {},
-    post: function () {}
+    get: function () {
+      dBHelper.users.get(obj.username, cb);
+    },
+    post: function (obj, cb) {
+      dBHelper.buildUser(obj, cb);
+    }
   }
 };
 
