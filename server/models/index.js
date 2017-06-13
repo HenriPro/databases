@@ -17,7 +17,17 @@ module.exports = {
       dBHelper.users.get(obj.username, cb);
     },
     post: function (obj, cb) {
-      dBHelper.buildUser(obj, cb);
+      dBHelper.buildField(obj, 'users', 'username', cb);
+    }
+  },
+
+  rooms: {
+    // Ditto as above.
+    get: function () {
+      // dBHelper.users.get(obj.username, cb);
+    },
+    post: function (obj, cb) {
+      dBHelper.buildField(obj, 'rooms', 'roomname', cb);
     }
   }
 };

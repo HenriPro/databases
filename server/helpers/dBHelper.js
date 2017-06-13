@@ -9,32 +9,57 @@ exports.dbConnection = () => {
   });
 };
 
-exports.buildUser = (obj, cb) => {
+exports.buildField = (obj, tableName, fieldName, cb) => {
+
   var connection = exports.dbConnection();
   connection.connect();
   
-  var insertString = `INSERT INTO users (username) VALUES ("${obj.username}");`;
+  var insertString = `INSERT INTO ${tableName} (${fieldName}) VALUES ("${obj[tableName]}");`;
   var insertArgs = [];
   console.log('INSERTING ', insertString);
   connection.query(insertString, insertArgs, function(err, results) {
     if (err) {
-      console.log('Error inserting into users', err);
+      console.log('Error inserting into ', tableName, fieldName, err);
       cb(err);
     } else {
-      console.log('Successfully inserted into users', results);
+      console.log('Successfully inserted into ', tableName, fieldName, results);
       cb(results);
     }
     connection.end();
   });
+
+};
+
+// exports.buildUser = (obj, cb) => {
+
+//   var connection = exports.dbConnection();
+//   connection.connect();
   
-};  
+//   var insertString = `INSERT INTO users (username) VALUES ("${obj.user}");`;
+//   var insertArgs = [];
+//   console.log('INSERTING ', insertString);
+//   connection.query(insertString, insertArgs, function(err, results) {
+//     if (err) {
+//       console.log('Error inserting into users', err);
+//       cb(err);
+//     } else {
+//       console.log('Successfully inserted into users', results);
+//       cb(results);
+//     }
+//     connection.end();
+//   });
+  
+// };  
 
 exports.buildMessage = (obj, cb) => {
+  // console.log('HEREEERERE', obj.username, obj.roomname, obj.text);
   var connection = exports.dbConnection();
   connection.connect();
+
+  // SELECT id from users WHERE username ="${obj.username}"
   exports.getIdFromTable('username', obj.username, 'users', (userId) => {
     exports.getIdFromTable('roomname', obj.roomname, 'rooms', (roomId) => {
-      var insertString = `INSERT INTO messages (userID, text, roomID) VALUES (${userId}, "${obj.message}", ${roomId});`;
+      var insertString = `INSERT INTO messages (userID, text, roomID) VALUES (${userId}, "${obj.text}", ${roomId});`;
       var insertArgs = [];
       console.log('INSERTING ', insertString);
       connection.query(insertString, insertArgs, function(err, results) {
@@ -55,7 +80,7 @@ exports.buildMessage = (obj, cb) => {
 //roomname, searchvalue, rooms
 //username, searchvalue, users
 exports.getIdFromTable = (key, searchValue, tableName, cb) => {
-  console.log('Inside getIdFromTable with parameters: ', key, searchvalue, tableName);
+  // console.log('Inside getIdFromTable with parameters: ', key, searchValue, tableName);
   var connection = exports.dbConnection();
   connection.connect();
   
@@ -78,7 +103,8 @@ exports.getAllMessages = (req, cb) => {
   var connection = exports.dbConnection();
   connection.connect();
   
-  var querryString = `SELECT u.username, m.text, r.roomname FROM messages m INNER JOIN users u ON m.userID=u.id INNER JOIN rooms r on m.roomID=r.id;`;
+  var querryString = `SELECT m.id as objectId, u.username, m.text, r.roomname 
+                      FROM messages m INNER JOIN users u ON m.userID=u.id INNER JOIN rooms r on m.roomID=r.id;`;
   var insertArgs = [];
   console.log('SELECTING ', querryString);
   connection.query(querryString, insertArgs, function(err, results) {
@@ -86,7 +112,7 @@ exports.getAllMessages = (req, cb) => {
       console.log(`Error getting all messages`, err);
       cb(err);
     } else {
-      console.log('Successfully got all messages', results);
+      console.log('Successfully got all messages');
       cb(results);
     }
     connection.end();

@@ -4,6 +4,8 @@ var app = {
   //TODO: The current 'handleUsernameClick' function just toggles the class 'friend'
   //to all messages sent by the user
   server: 'http://localhost:3000/classes/messages',
+  userServer: 'http://localhost:3000/classes/users',
+  roomServer: 'http://localhost:3000/classes/rooms',
   username: 'anonymous',
   roomname: 'lobby',
   lastMessageId: 0,
@@ -13,7 +15,8 @@ var app = {
   init: function() {
     // Get username
     app.username = window.location.search.substr(10);
-
+    // send username;
+    app.sendUsername(app.username);
     // Cache jQuery selectors
     app.$message = $('#message');
     app.$chats = $('#chats');
@@ -32,7 +35,38 @@ var app = {
     // Poll for new messages
     setInterval(function() {
       app.fetch(true);
-    }, 3000);
+    }, 10000);
+  },
+
+  sendRoom: function(roomname) {
+    $.ajax({
+      url: app.roomServer,
+      type: 'POST',
+      data: JSON.stringify({rooms: roomname}),
+      success: function (data) {
+        console.log('roomname posted', roomname);
+      },
+      error: function (error) {
+        
+        console.error('chatterbox: Failed to send roomname', error);
+      }
+    });
+  },
+
+
+  sendUsername: function(username) {
+    $.ajax({
+      url: app.userServer,
+      type: 'POST',
+      data: JSON.stringify({users: username}),
+      success: function (data) {
+        console.log('username posted', username);
+      },
+      error: function (error) {
+        
+        console.error('chatterbox: Failed to send username', error);
+      }
+    });
   },
 
   send: function(message) {
@@ -42,15 +76,17 @@ var app = {
     $.ajax({
       url: app.server,
       type: 'POST',
-      data: message,
+      data: JSON.stringify(message),
       success: function (data) {
         // Clear messages input
         app.$message.val('');
+        console.log('Inside SEND success', data);
 
         // Trigger a fetch to update the messages, pass true to animate
         app.fetch();
       },
       error: function (error) {
+        console.log('Inside SEND with ERROR');
         console.error('chatterbox: Failed to send message', error);
       }
     });
@@ -205,11 +241,14 @@ var app = {
 
         // Select the menu option
         app.$roomSelect.val(roomname);
+
+        app.sendRoom(roomname);
       }
     } else {
       app.startSpinner();
       // Store as undefined for empty names
       app.roomname = app.$roomSelect.val();
+      //
     }
     // Rerender messages
     app.renderMessages(app.messages);
@@ -230,7 +269,7 @@ var app = {
 
   startSpinner: function() {
     $('.spinner img').show();
-    $('form input[type=submit]').attr('disabled', 'true');
+    //$('form input[type=submit]').attr('disabled', 'true');
   },
 
   stopSpinner: function() {

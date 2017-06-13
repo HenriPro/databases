@@ -20,11 +20,12 @@ module.exports = {
       });
       req.on('end', ()=> {
         console.log('thhhhhhhhhhhhhhhhhhhhhhhhiss', body.toString());
+        models.messages.post(JSON.parse(body), () => {
+          res.statusCode = 201;
+          res.end();
+        });
       });
-      models.messages.post(req.body, () => {
-        res.statusCode = 201;
-        res.end();
-      });
+      
     } // a function which handles posting a message to the database
   },
 
@@ -34,15 +35,44 @@ module.exports = {
       console.log('Inside users controllerGET');
     },
     post: function (req, res) {
-      console.log('in post users controller', req.body);
-      models.users.post(req.body, () => {
-        res.statusCode = 201;
-        res.end();
-      });
-      
 
+      var body = [];
+      req.on('data', (chunk)=>{
+        body.push(chunk);
+      });
+      req.on('end', ()=> {
+        
+        models.users.post(JSON.parse(body), () => {
+          res.statusCode = 201;
+          res.end();
+        });
+      });
+    
+    }
+  },
+
+  rooms: {
+    // Ditto as above
+    get: function (req, res) {
+      console.log('Inside rooms controllerGET');
+    },
+    post: function (req, res) {
+
+      var body = [];
+      req.on('data', (chunk)=>{
+        body.push(chunk);
+      });
+      req.on('end', ()=> {
+        
+        models.rooms.post(JSON.parse(body), () => {
+          res.statusCode = 201;
+          res.end();
+        });
+      });
     
     }
   }
+
+
 };
 
