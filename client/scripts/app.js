@@ -63,12 +63,16 @@ var app = {
       data: { order: '-createdAt' },
       contentType: 'application/json',
       success: function(data) {
+        console.log('Inside fetch with data', data);
+        var data = {results: JSON.parse(data)};
         // Don't bother if we have nothing to work with
+        //data.results = JSON.parse(data);
+        console.log(data);
         if (!data.results || !data.results.length) { return; }
 
         // Store messages for caching later
         app.messages = data.results;
-
+        console.log('inside fetch app messages', app.messages);
         // Get the last message
         var mostRecentMessage = data.results[data.results.length - 1];
 
