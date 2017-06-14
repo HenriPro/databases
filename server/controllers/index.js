@@ -6,7 +6,7 @@ module.exports = {
       console.log('inside messages controller GET');
       models.messages.get(req, (messages) => {
         res.statusCode = 200;
-        console.log('JSON MESSAGES: ', messages.toString());
+        console.log('JSON MESSAGES coming back from the dBHelper: ', messages.toString());
         res.end(JSON.stringify(messages));
       });
       

@@ -1,5 +1,6 @@
 var mysql = require('mysql');
-
+const Sequelize = require('sequelize');
+const db = new Sequelize('chat', 'root', 'plantlife');
 
 exports.dbConnection = () => { 
   return mysql.createConnection({
@@ -8,6 +9,28 @@ exports.dbConnection = () => {
     database: 'chat'
   });
 };
+
+var Users = db.define('users', {
+  username: Sequelize.STRING
+}, {timestamps: false});
+
+var Rooms = db.define('rooms', {
+  roomname: Sequelize.STRING
+}, {timestamps: false});
+
+var Messages = db.define('messages', {
+  userID: Sequelize.INTEGER,
+  text: Sequelize.STRING,
+  roomID: Sequelize.INTEGER
+}, {timestamps: false});
+
+
+//Relationships
+Messages.belongsTo(Users, {foreignKey: 'userID', targetKey: 'id'});
+Users.hasMany(Messages, {foreignKey: 'userID'});
+
+Messages.belongsTo(Rooms, {foreignKey: 'roomID', targetKey: 'id'});
+Rooms.hasMany(Messages, {foreignKey: 'roomID'});
 
 exports.buildField = (obj, tableName, fieldName, cb) => {
 
@@ -30,52 +53,37 @@ exports.buildField = (obj, tableName, fieldName, cb) => {
 
 };
 
-// exports.buildUser = (obj, cb) => {
+exports.buildMessage = (obj, cb) => {
+  
+  Messages.create( {userID: ''})
+};
+ 
 
+// exports.buildMessage = (obj, cb) => {
+//   // console.log('HEREEERERE', obj.username, obj.roomname, obj.text);
 //   var connection = exports.dbConnection();
 //   connection.connect();
-  
-//   var insertString = `INSERT INTO users (username) VALUES ("${obj.user}");`;
-//   var insertArgs = [];
-//   console.log('INSERTING ', insertString);
-//   connection.query(insertString, insertArgs, function(err, results) {
-//     if (err) {
-//       console.log('Error inserting into users', err);
-//       cb(err);
-//     } else {
-//       console.log('Successfully inserted into users', results);
-//       cb(results);
-//     }
-//     connection.end();
+
+//   // SELECT id from users WHERE username ="${obj.username}"
+//   exports.getIdFromTable('username', obj.username, 'users', (userId) => {
+//     exports.getIdFromTable('roomname', obj.roomname, 'rooms', (roomId) => {
+//       var insertString = `INSERT INTO messages (userID, text, roomID) VALUES (${userId}, "${obj.text}", ${roomId});`;
+//       var insertArgs = [];
+//       console.log('INSERTING ', insertString);
+//       connection.query(insertString, insertArgs, function(err, results) {
+//         if (err) {
+//           console.log('Error inserting into messages', err);
+//           cb(err);
+//         } else {
+//           console.log('Successfully inserted into messages', results);
+//           cb(results);
+//         }
+//         connection.end();
+//       });
+//     });
 //   });
   
 // };  
-
-exports.buildMessage = (obj, cb) => {
-  // console.log('HEREEERERE', obj.username, obj.roomname, obj.text);
-  var connection = exports.dbConnection();
-  connection.connect();
-
-  // SELECT id from users WHERE username ="${obj.username}"
-  exports.getIdFromTable('username', obj.username, 'users', (userId) => {
-    exports.getIdFromTable('roomname', obj.roomname, 'rooms', (roomId) => {
-      var insertString = `INSERT INTO messages (userID, text, roomID) VALUES (${userId}, "${obj.text}", ${roomId});`;
-      var insertArgs = [];
-      console.log('INSERTING ', insertString);
-      connection.query(insertString, insertArgs, function(err, results) {
-        if (err) {
-          console.log('Error inserting into messages', err);
-          cb(err);
-        } else {
-          console.log('Successfully inserted into messages', results);
-          cb(results);
-        }
-        connection.end();
-      });
-    });
-  });
-  
-};  
 
 //roomname, searchvalue, rooms
 //username, searchvalue, users
@@ -100,24 +108,33 @@ exports.getIdFromTable = (key, searchValue, tableName, cb) => {
 };
 
 exports.getAllMessages = (req, cb) => {
-  var connection = exports.dbConnection();
-  connection.connect();
-  
-  var querryString = `SELECT m.id as objectId, u.username, m.text, r.roomname 
-                      FROM messages m INNER JOIN users u ON m.userID=u.id INNER JOIN rooms r on m.roomID=r.id;`;
-  var insertArgs = [];
-  console.log('SELECTING ', querryString);
-  connection.query(querryString, insertArgs, function(err, results) {
-    if (err) {
-      console.log(`Error getting all messages`, err);
-      cb(err);
-    } else {
-      console.log('Successfully got all messages');
-      cb(results);
-    }
-    connection.end();
-  });
+
+  db.sync()
+    .then( () => {
+      
+      return Messages.findAll( { include: [{model: Users}, {model: Rooms}], attributes: ['id', 'text'] } );
+     
+    })
+    .then( (messages) => {
+
+      var messagesTransformed = messages.map( message => {
+        message.dataValues.username = message.dataValues.user.dataValues.username;
+        delete message.dataValues.user;
+        message.dataValues.roomname = message.dataValues.room.dataValues.roomname;
+        delete message.dataValues.room;
+
+        return message.dataValues;
+      });
+      console.log('Sequelizeed messages..................', messagesTransformed);
+      
+      cb(messagesTransformed);
+    })
+    .catch( (err) => {
+      console.log('ERR when sequelizing messages......', err);
+    });
 };
+
+
 
 
 // exports.getAllMessages({}, (messages)=> {
