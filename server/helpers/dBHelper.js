@@ -1,15 +1,8 @@
 var mysql = require('mysql');
 const Sequelize = require('sequelize');
-const db = new Sequelize('chat', 'root', 'plantlife');
+var newDBConnection = () => { return new Sequelize('chat', 'root', 'plantlife')};
 
-// exports.dbConnection = () => { 
-//   return mysql.createConnection({
-//     user: 'root',
-//     password: 'plantlife',
-//     database: 'chat'
-//   });
-// };
-
+var db = newDBConnection();
 var Users = db.define('users', {
   username: Sequelize.STRING
 }, {timestamps: false});
@@ -25,6 +18,16 @@ var Messages = db.define('messages', {
 }, {timestamps: false});
 
 
+var TableMappings = {
+  rooms: Rooms,
+  users: Users
+};
+
+var FieldMappings = {
+  rooms: 'roomname',
+  users: 'username'
+};
+
 //Relationships
 Messages.belongsTo(Users, {foreignKey: 'userID', targetKey: 'id'});
 Users.hasMany(Messages, {foreignKey: 'userID'});
@@ -32,31 +35,29 @@ Users.hasMany(Messages, {foreignKey: 'userID'});
 Messages.belongsTo(Rooms, {foreignKey: 'roomID', targetKey: 'id'});
 Rooms.hasMany(Messages, {foreignKey: 'roomID'});
 
-// exports.buildField = (obj, tableName, fieldName, cb) => {
 
-//   var connection = exports.dbConnection();
-//   connection.connect();
-  
-//   var insertString = `INSERT INTO ${tableName} (${fieldName}) VALUES ("${obj[tableName]}");`;
-//   var insertArgs = [];
-//   console.log('INSERTING ', insertString);
-//   connection.query(insertString, insertArgs, function(err, results) {
-//     if (err) {
-//       console.log('Error inserting into ', tableName, fieldName, err);
-//       cb(err);
-//     } else {
-//       console.log('Successfully inserted into ', tableName, fieldName, results);
-//       cb(results);
-//     }
-//     connection.end();
-//   });
+exports.buildField = (obj, tablename,cb) => {
+  db = newDBConnection();
+  db.sync()
+    .then( () => {
+   
+      return TableMappings[tablename].create({ [FieldMappings[tablename]] : obj[tablename]});
+    })
+    .then( (tablerow) => {
+      db.close();
+      cb();
+    })
+    .catch( (err) => {
+      console.log('error creating a table row for: ', tablename,  err);
+      db.close();
+    });
+};
 
-// };
-  
 
 exports.buildMessage = (obj, cb) => {
 
   var message = {text: obj.text};
+  db = newDBConnection();
   db.sync()
   .then( () => {  
     return exports.getUserIdPromise(obj.username);
@@ -78,9 +79,10 @@ exports.buildMessage = (obj, cb) => {
   .catch(function(err) {
     // Handle any error in the chain
     console.error(err);
-    db.close();
+    //db.close();
   })
   .then( () => {
+    db.close();
     cb();
     db.close();
   });
@@ -101,7 +103,7 @@ var counter = 0;
 
 exports.getAllMessages = (req, cb) => {
   counter++;
-// console.log('COUNTER: ', counter);
+  db = newDBConnection();
   db.sync()
     .then( () => {
       
@@ -116,12 +118,14 @@ exports.getAllMessages = (req, cb) => {
         message.dataValues.roomname = message.dataValues.room.dataValues.roomname;
         delete message.dataValues.room;
 
+        message.dataValues.objectId = message.dataValues.id;
+        delete message.dataValues.id;        
+
         return message.dataValues;
       });
       console.log('Sequelizeed messages..................', messagesTransformed);
       
-      // db.close(); //WHY DOES IT DO THIS
-    
+      db.close(); 
       cb(messagesTransformed);
     })
     .catch( (err) => {
@@ -129,6 +133,7 @@ exports.getAllMessages = (req, cb) => {
       console.log('ERR when sequelizing messages......', err);
     });
 };
+
 
 
 
